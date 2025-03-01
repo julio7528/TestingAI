@@ -1,3 +1,12 @@
+# Usando Variável de Ambiente:
+# bashCopy# Linux/Mac
+# export ENVIRONMENT=production
+# python -m src.bots.main
+
+# # Windows
+# set ENVIRONMENT=production
+# python -m src.bots.main
+
 import os
 import sys
 import argparse

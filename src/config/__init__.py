@@ -1,7 +1,7 @@
 from .settings import Settings
 
-# Instantiate the settings object
+# Instancia as configurações
 settings = Settings()
 
-# Optionally, control what’s exposed when importing from the package
+# Exporta a instância para uso em qualquer lugar
 __all__ = ['settings']
