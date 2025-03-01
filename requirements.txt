@@ -1,0 +1,12 @@
+# Core RPA libraries
+pyautogui==0.9.53
+python-dotenv==0.19.2
+requests==2.27.1
+pandas==1.4.1
+openpyxl==3.0.9
+selenium==4.1.0
+pywin32==303; platform_system == 'Windows'
+
+# For testing
+pytest==7.0.0
+pytest-cov==3.0.0
