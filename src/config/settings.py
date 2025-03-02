@@ -1,17 +1,23 @@
 # src/config/settings.py
 import os
 import sys
+from dotenv import load_dotenv
+
+# Certifique-se de que as variáveis de ambiente estão carregadas
 from src.utils.environment_loader import environment
 
 class Settings:
     """
-    Configurações para a solução RPA, carregadas a partir das variáveis de ambiente
-    definidas no arquivo .env correspondente ao ambiente atual.
+    Configurações centralizadas para a solução RPA.
+    Carrega configurações de variáveis de ambiente e valores padrão.
     """
     
     def __init__(self):
-        # Ambiente atual
+        # Ambiente atual (já definido pelo environment_loader)
         self.ENVIRONMENT = environment
+        
+        # Nome do bot (usado por vários módulos)
+        self.BOT_NAME = os.getenv('BOT_NAME', 'ModelViewer')
         
         # Informações do projeto
         self.PROJECT_INFO = {
@@ -30,33 +36,26 @@ class Settings:
 
         # Configurações de processamento
         self.SETTINGS = {
-            'retry_attempts': int(os.getenv('RETRY_ATTEMPTS', 3)),
-            'timeout_seconds': int(os.getenv('TIMEOUT_SECONDS', 30)),
+            'retry_attempts': int(os.getenv('APP_RETRY_ATTEMPTS', 3)),
+            'timeout_seconds': int(os.getenv('APP_TIMEOUT_SECONDS', 30)),
             'debug_mode': os.getenv('DEBUG_MODE', 'false').lower() in ('true', '1', 'yes')
         }
 
-        # Configurações de banco de dados
+        # Configurações de banco de dados - carregadas diretamente do .env
         self.DB_CONFIG = {
-            'enabled': os.getenv('DB_ENABLED', 'false').lower() in ('true', '1', 'yes'),
-            'host': os.getenv('DB_HOST', 'localhost'),
+            'enabled': True,  # Por padrão vamos assumir que DB está habilitado
+            'host': os.getenv('DB_HOST', ''),
             'port': os.getenv('DB_PORT', '5432'),
             'database': os.getenv('DB_NAME', 'postgres'),
-            'user': os.getenv('DB_USER', 'postgres'),
+            'user': os.getenv('DB_USER', ''),
             'password': os.getenv('DB_PASSWORD', ''),
             'schema': os.getenv('DB_SCHEMA', self.PROJECT_INFO['name'])
         }
 
-        # Configurações de email
-        self.EMAIL_CONFIG = {
-            'enabled': os.getenv('EMAIL_ENABLED', 'false').lower() in ('true', '1', 'yes'),
-            'send_to_real_recipients': os.getenv('EMAIL_SEND_TO_REAL', 'false').lower() in ('true', '1', 'yes'),
-            'from_address': os.getenv('EMAIL_FROM', 'rpa@example.com'),
-            'admin_address': os.getenv('EMAIL_ADMIN', 'admin@example.com')
-        }
-
-        # Nome do bot
-        self.BOT_NAME = os.getenv('BOT_NAME', 'Default_Bot')
-        
+        # Validar configurações de DB
+        if not self.DB_CONFIG['host'] or not self.DB_CONFIG['user'] or not self.DB_CONFIG['password']:
+            self.DB_CONFIG['enabled'] = False
+            
         # Exibe configurações de inicialização se em modo debug
         if self.SETTINGS['debug_mode']:
             self._print_settings_summary()
@@ -79,4 +78,6 @@ class Settings:
         if self.DB_CONFIG['enabled']:
             print(f"  - Host: {self.DB_CONFIG['host']}")
             print(f"  - Banco: {self.DB_CONFIG['database']}")
+            print(f"  - Usuário: {self.DB_CONFIG['user']}")
+            print(f"  - Schema: {self.DB_CONFIG['schema']}")
         print("="*50 + "\n")

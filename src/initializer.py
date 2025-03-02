@@ -1,13 +1,15 @@
-# src/initializer.py (updated)
-# Carrega ambiente primeiro, antes de qualquer outra coisa
+# src/initializer.py
+# Inicializador central da aplicação
+
+# Importa o ambiente primeiro (isso carrega as variáveis de ambiente do .env)
 from src.utils.environment_loader import environment
 
-# Agora pode importar outros módulos que dependem das configurações
+# Depois importa os outros módulos que dependem das variáveis de ambiente
 from src.config.settings import Settings
-from src.utils.logger import EnhancedLogger
+from src.utils.logger import EnhancedLogger, ProcessType, LogStatus
 from src.infra.db.db_manager import get_db_manager
 
-# Inicializa componentes globais
+# Variáveis globais
 settings = Settings()
 logger = None
 db_manager = None
@@ -15,7 +17,7 @@ db_manager = None
 def initialize_app():
     """
     Inicializa todos os componentes da aplicação:
-    - Inicializa logger
+    - Configura o logger
     - Conecta ao banco de dados
     - Registra função de limpeza ao encerrar
     
@@ -28,28 +30,31 @@ def initialize_app():
     if logger is not None and db_manager is not None:
         return logger, db_manager
     
-    # Inicializa o gerenciador de banco de dados
+    # Inicializa o DB Manager
     db_manager = get_db_manager()
     
-    # Inicializa o logger usando o gerenciador de banco de dados
+    # Inicializa o logger
     logger = db_manager.initialize_logging()
     
-    # Registra log de início
-    logger.log_info("initialize_app", f"Application initialized with environment: {environment}", "system")
+    # Ajusta modo de debug conforme configurações
+    logger.debug_mode = settings.SETTINGS['debug_mode']
+    
+    # Log inicial
+    logger.log_info("initialize_app", f"Inicializando aplicação no ambiente: {environment}", ProcessType.SYSTEM)
     
     # Conecta ao banco de dados
     db_connected = db_manager.connect()
     
     if db_connected:
-        logger.log_success("initialize_app", "Database connection established", "system")
+        logger.log_success("initialize_app", "Conexão com banco de dados estabelecida", ProcessType.SYSTEM)
     else:
-        logger.log_warning("initialize_app", "Running without database connection", "system")
+        logger.log_warning("initialize_app", "Executando sem conexão com banco de dados", ProcessType.SYSTEM)
     
-    # Registra função de limpeza ao encerrar
+    # Registra função de limpeza
     import atexit
     atexit.register(cleanup_app)
     
-    logger.log_success("initialize_app", "Application initialized successfully", "system")
+    logger.log_success("initialize_app", "Aplicação inicializada com sucesso", ProcessType.SYSTEM)
     
     return logger, db_manager
 
@@ -57,18 +62,15 @@ def cleanup_app():
     """Limpa recursos ao encerrar a aplicação"""
     global logger, db_manager
     
-    if logger is not None:
-        logger.log_info("cleanup_app", "Application shutdown initiated", "system")
+    if logger:
+        logger.log_info("cleanup_app", "Finalizando aplicação...", ProcessType.SYSTEM)
     
     # Fecha conexão com banco de dados
-    if db_manager is not None:
+    if db_manager:
         db_manager.close()
     
-    if logger is not None:
-        logger.log_info("cleanup_app", "Application shutdown completed", "system")
-
-# Inicializa a aplicação quando o módulo é importado
-logger, db_manager = initialize_app()
+    if logger:
+        logger.log_info("cleanup_app", "Aplicação finalizada com sucesso", ProcessType.SYSTEM)
 
 # Exporta variáveis importantes
-__all__ = ['logger', 'db_manager', 'environment', 'settings']
+__all__ = ['initialize_app', 'logger', 'db_manager', 'settings', 'environment']
