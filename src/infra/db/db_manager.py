@@ -1,3 +1,4 @@
+# src/infra/db/db_manager.py (updated)
 # Database connection manager for RPA
 
 import logging
@@ -25,7 +26,8 @@ class DBManager:
     def initialize_logging(self):
         """Inicializa o logger antes de conectar ao banco de dados"""
         if DBManager._logger is None:
-            DBManager._logger = EnhancedLogger(self.settings.PROJECT_INFO['name'])
+            proj_name = self.settings.PROJECT_INFO['name'] if hasattr(self.settings, 'PROJECT_INFO') else "rpa_automation"
+            DBManager._logger = EnhancedLogger(proj_name)
         return DBManager._logger
     
     def connect(self):
@@ -46,7 +48,7 @@ class DBManager:
                 self._connection = None
         
         # Verifica se o banco de dados está habilitado nas configurações
-        if not self.settings.DB_CONFIG['enabled']:
+        if not hasattr(self.settings, 'DB_CONFIG') or not self.settings.DB_CONFIG.get('enabled', False):
             logger.log_warning("db_connect", "Database connection disabled in settings", ProcessType.SYSTEM)
             return False
         
@@ -61,7 +63,8 @@ class DBManager:
             logger.log_success("db_connect", "Successfully connected to database", ProcessType.SYSTEM)
             
             # Cria a tabela de logs se não existir
-            logger.connect_to_db(connection_string)
+            if hasattr(logger, 'connect_to_db'):
+                logger.connect_to_db(connection_string)
             
             return True
         except Exception as e:
