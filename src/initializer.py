@@ -8,11 +8,26 @@ from src.utils.environment_loader import environment
 from src.config.settings import Settings
 from src.utils.logger import EnhancedLogger, ProcessType, LogStatus
 from src.infra.db.db_manager import get_db_manager
+import atexit
 
 # Variáveis globais
 settings = Settings()
 logger = None
 db_manager = None
+
+def cleanup_app():
+    """Limpa recursos ao encerrar a aplicação"""
+    global logger, db_manager
+    
+    if logger:
+        logger.log_info("cleanup_app", "Finalizando aplicação...", ProcessType.SYSTEM)
+    
+    # Fecha conexão com banco de dados
+    if db_manager:
+        db_manager.close()
+    
+    if logger:
+        logger.log_info("cleanup_app", "Aplicação finalizada com sucesso", ProcessType.SYSTEM)
 
 def initialize_app():
     """
@@ -47,30 +62,20 @@ def initialize_app():
     
     if db_connected:
         logger.log_success("initialize_app", "Conexão com banco de dados estabelecida", ProcessType.SYSTEM)
+        # Conecta o logger ao banco de dados
+        connection = db_manager.get_connection()
+        if connection:
+            logger.connect_to_db(connection)
+            logger.log_success("initialize_app", "Logger conectado ao banco de dados", ProcessType.SYSTEM)
     else:
         logger.log_warning("initialize_app", "Executando sem conexão com banco de dados", ProcessType.SYSTEM)
     
     # Registra função de limpeza
-    import atexit
     atexit.register(cleanup_app)
     
     logger.log_success("initialize_app", "Aplicação inicializada com sucesso", ProcessType.SYSTEM)
     
     return logger, db_manager
-
-def cleanup_app():
-    """Limpa recursos ao encerrar a aplicação"""
-    global logger, db_manager
-    
-    if logger:
-        logger.log_info("cleanup_app", "Finalizando aplicação...", ProcessType.SYSTEM)
-    
-    # Fecha conexão com banco de dados
-    if db_manager:
-        db_manager.close()
-    
-    if logger:
-        logger.log_info("cleanup_app", "Aplicação finalizada com sucesso", ProcessType.SYSTEM)
 
 # Exporta variáveis importantes
 __all__ = ['initialize_app', 'logger', 'db_manager', 'settings', 'environment']
